@@ -1,0 +1,36 @@
+
+{
+"$schema": "https://opencode.ai/config.json",
+
+"default_agent": "learn",
+
+"share": "disabled",
+
+"subagent_depth": 1,
+
+"snapshot": true,
+
+"watcher": {
+"ignore": [
+".git/**",
+".venv/**",
+"venv/**",
+"**pycache**/**",
+".pytest_cache/**",
+".mypy_cache/**",
+".ruff_cache/**",
+".tox/**",
+".nox/**",
+"node_modules/**",
+"dist/**",
+"build/**",
+"coverage/**",
+"htmlcov/**",
+"target/**"
+]
+},
+
+"instructions": [
+"AGENTS.md"
+]
+}
