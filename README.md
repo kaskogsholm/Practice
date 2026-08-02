@@ -27,8 +27,9 @@ ninja --version
 ```
 
 Meson downloads the version of doctest pinned in `subprojects/doctest.wrap`
-during the initial setup. The solution code itself has no external
-dependencies.
+during the initial setup. The optional benchmark setup similarly uses the
+pinned `subprojects/google-benchmark.wrap`. The solution code itself has no
+external dependencies.
 
 ## Build setup
 
@@ -87,6 +88,65 @@ An unsolved problem or approach may have failing tests and a nonzero test exit
 status. That red state can be expected algorithm behavior rather than a build
 or test-infrastructure failure.
 
+## Running benchmarks
+
+Benchmarks are optional and disabled in the normal build. Configure a separate
+optimized build directory when comparing implementations:
+
+```sh
+meson setup build-bench --buildtype=release -Dbenchmarks=true
+```
+
+Run every benchmark implementation for one problem:
+
+```sh
+meson test -C build-bench \
+  --benchmark \
+  --suite valid_parentheses \
+  --verbose
+```
+
+Run one implementation or filter Google Benchmark's workload names:
+
+```sh
+meson test -C build-bench \
+  --benchmark \
+  valid_parentheses_in_place_benchmark \
+  --verbose
+
+meson test -C build-bench \
+  --benchmark \
+  valid_parentheses_in_place_benchmark \
+  --test-args='--benchmark_filter=isValid/opening_only' \
+  --verbose
+```
+
+The valid-parentheses benchmarks use fixed-seed datasets at lengths 16, 128,
+and 1000. They cover uniformly random brackets, random opening-only strings,
+random valid nesting, and random valid shallow pairs. Input generation is
+outside the timed loop, and each solution receives the same datasets.
+
+The custom counters `allocs_per_input` and `allocated_bytes_per_input` measure
+heap allocation traffic while calling `isValid`. They do not measure peak
+resident memory. Benchmark timings depend on the compiler, optimization flags,
+CPU state, and system load; use correctness tests before comparing performance.
+
+Use Google Benchmark's pinned comparison tool to calculate relative timing
+between two executables. For example, compare one opening-heavy workload with a
+short measurement interval:
+
+```sh
+python3 subprojects/benchmark-1.8.4/tools/compare.py benchmarks \
+  build-bench/problems/NeetCode/valid_parentheses/valid_parentheses_opening_stack_benchmark \
+  build-bench/problems/NeetCode/valid_parentheses/valid_parentheses_in_place_benchmark \
+  --benchmark_filter=isValid/opening_only/1000 \
+  --benchmark_min_time=0.1s
+```
+
+The first executable is the baseline and the second is the contender. Negative
+time deltas mean the contender was faster in that run. Use repeated runs before
+drawing conclusions from small differences.
+
 ## Direct compiler experiments
 
 Meson does not generate or transform the C++ test sources. A solution can also
@@ -127,6 +187,7 @@ Create a problem directory containing:
 - `solution.hpp` for the primary submit-ready `Solution` class
 - optional `solution_<approach>.hpp` files for alternative implementations
 - `test_solution.cpp` for local doctest cases
+- optional `benchmark_solution.cpp` for shared performance workloads
 - `meson.build` for the problem's test executable
 
 The test source should include the solution and doctest:
