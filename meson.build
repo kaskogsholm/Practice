@@ -47,3 +47,4 @@ if benchmarks_enabled
 endif
 
 subdir('problems/NeetCode/valid_parentheses')
+subdir('problems/NeetCode/baseball_game')
